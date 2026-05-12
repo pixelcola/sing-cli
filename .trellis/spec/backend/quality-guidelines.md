@@ -212,7 +212,7 @@ jobs:
 - Ruff 和 ty 的 CI 检查范围是 `src`。
 - Python 测试使用 `pytest` 执行。
 - CI 不发布包、不创建 GitHub Release、不上传构建产物。
-- `release.yml` 等发布 workflow 必须等第一版功能、产物类型和 tag 规则明确后再添加。
+- 发布逻辑只放在 `.github/workflows/release.yml`，不并入 CI workflow。
 
 ### 4. Validation & Error Matrix
 
@@ -221,7 +221,7 @@ jobs:
 | CI 命令直接调用 `ruff`、`ty` 或 `pytest` | 改为 `uv run ruff ...`、`uv run ty ...` 或 `uv run pytest` |
 | CI 中 `uv sync --locked` 失败 | 更新并提交 `uv.lock` |
 | CI 把 Ruff 检查范围设为 `.` | 改为 `src` |
-| 未明确发布产物前新增 `release.yml` | 移除发布 workflow，保留 CI |
+| CI workflow 创建 GitHub Release 或发布 PyPI | 移到 `.github/workflows/release.yml` |
 
 ### 5. Good/Base/Bad Cases
 
@@ -233,7 +233,7 @@ jobs:
 
 - CI workflow 改动：本地运行 `uv run ruff check src`、`uv run ruff format --check --diff src`、`uv run ty check src` 和 `uv run pytest`。
 - 依赖或 lockfile 改动：确认 `uv sync --locked --all-extras --dev` 可解析。
-- 发布 workflow 改动：确认已定义发布产物、tag 规则和失败回滚方式。
+- 发布 workflow 改动：按发布 workflow 契约检查 tag 规则、权限、构建产物和 PyPI 发布步骤。
 
 ### 7. Wrong vs Correct
 
@@ -247,6 +247,95 @@ jobs:
 
 ```yaml
 - run: uv run ruff check --output-format=github src
+```
+
+## 发布 workflow 契约
+
+### 1. Scope / Trigger
+
+- Trigger: 修改 `.github/workflows/release.yml`、发布 tag 规则、构建产物、GitHub Release 上传步骤、PyPI trusted publishing 环境或发布权限。
+
+### 2. Signatures
+
+```yaml
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: uv build
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          generate_release_notes: true
+      - run: uv publish
+```
+
+### 3. Contracts
+
+- 发布 workflow 文件固定为 `.github/workflows/release.yml`。
+- 发布只由 `v*` tag push 触发，不在 branch push 或 pull request 上运行。
+- 发布 job 使用 GitHub environment `pypi`，匹配 PyPI trusted publishing 配置。
+- `id-token: write` 是 `uv publish` 使用 PyPI trusted publishing 的必需权限。
+- `contents: write` 是创建 GitHub Release 和上传 release assets 的必需权限。
+- 构建命令固定为 `uv build`，发布前必须生成 wheel 和 source distribution。
+- GitHub Release 必须上传 `dist/*.whl` 和 `dist/*.tar.gz`。
+- PyPI 发布固定使用 `uv publish`，不在 workflow 中配置长期 PyPI token。
+
+### 4. Validation & Error Matrix
+
+| 条件 | 行为 |
+|------|------|
+| release workflow 在 pull request 或普通 branch push 上运行 | 改为只监听 `push.tags: ["v*"]` |
+| 缺少 `id-token: write` | 添加该权限，否则 PyPI trusted publishing 无法签发 OIDC token |
+| 缺少 `contents: write` | 添加该权限，否则 GitHub Release 创建或资产上传会失败 |
+| 发布前未运行 `uv build` | 添加构建步骤并确保产物位于 `dist/` |
+| release assets 未覆盖 wheel 或 sdist | 同时上传 `dist/*.whl` 和 `dist/*.tar.gz` |
+| workflow 使用 PyPI API token secret | 改为 trusted publishing，通过 `uv publish` 使用 OIDC |
+
+### 5. Good/Base/Bad Cases
+
+- Good: 推送 `v1.2.3` tag 后构建 wheel 和 sdist，创建 GitHub Release，上传两个产物，再执行 `uv publish`。
+- Base: 普通 PR 只运行 CI，不运行发布 workflow。
+- Bad: 在 `pull_request` 事件里执行 `uv publish`。
+- Bad: 使用 `contents: read` 后调用 `softprops/action-gh-release` 创建 release。
+
+### 6. Tests Required
+
+- release workflow 改动：检查 YAML 缩进、触发条件、job 权限和 step 顺序。
+- 发布权限改动：确认 `permissions` 同时包含 `id-token: write` 和 `contents: write`。
+- 发布产物改动：确认 `uv build` 会生成 `dist/*.whl` 和 `dist/*.tar.gz`。
+- PyPI 环境改动：确认 GitHub environment 名称和 PyPI trusted publishing 配置一致。
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+```
+
+#### Correct
+
+```yaml
+permissions:
+  id-token: write
+  contents: write
 ```
 
 ## Dependabot 契约
