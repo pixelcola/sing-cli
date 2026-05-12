@@ -170,3 +170,36 @@ Changed sing restart to use the active profile without accepting a profile argum
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: Update README installation instructions
+
+**Date**: 2026-05-12
+**Task**: Update README installation instructions
+**Branch**: `docs/readme-install-uv-tool`
+
+### Summary
+
+Documented Scoop runtime dependency installation and uv tool install, upgrade, and uninstall commands for sing-cli.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `49680f6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

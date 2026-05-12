@@ -6,6 +6,32 @@ Windows CLI for installing and controlling the `sing-box` Windows service.
 
 `sing-box.exe` and `nssm.exe` must be available in `PATH`. `sing install --bin <path>` can use a custom `sing-box.exe` path.
 
+On Windows, install the runtime executables with Scoop:
+
+```powershell
+scoop install sing-box nssm
+```
+
+## Installation
+
+Install `sing-cli`:
+
+```powershell
+uv tool install sing-cli
+```
+
+Update `sing-cli`:
+
+```powershell
+uv tool upgrade sing-cli
+```
+
+Uninstall `sing-cli`:
+
+```powershell
+uv tool uninstall sing-cli
+```
+
 ## Commands
 
 | Command | Description |
