@@ -203,3 +203,36 @@ Documented Scoop runtime dependency installation and uv tool install, upgrade, a
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Expand test coverage
+
+**Date**: 2026-05-12
+**Task**: Expand test coverage
+**Branch**: `test/improve-coverage`
+
+### Summary
+
+Added CLI, profile, state, and service tests covering command success paths, failure propagation, and state preservation.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `764205a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
