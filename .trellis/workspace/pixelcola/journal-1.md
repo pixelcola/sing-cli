@@ -71,3 +71,36 @@ Implemented the Windows sing-box CLI with Typer commands, local profile state, s
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Use NSSM for Windows service
+
+**Date**: 2026-05-12
+**Task**: Use NSSM for Windows service
+**Branch**: `fix/use-nssm-service`
+
+### Summary
+
+Replaced direct sc.exe service management with NSSM commands, updated service tests and documented the NSSM service contract.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `72c1b0d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

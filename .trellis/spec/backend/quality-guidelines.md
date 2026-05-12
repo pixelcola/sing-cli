@@ -12,7 +12,7 @@
 - Ruff、ty 和 pytest 是当前已确认的代码质量工具。
 - CLI 框架使用 `typer`。
 - HTTP 客户端使用 `httpx`。
-- Windows 服务管理使用 `sc.exe`，不使用 `pywin32`。
+- Windows 服务管理使用 `nssm.exe`，不使用 `pywin32`。
 - 文档和 Trellis SPEC 使用中文编写。
 
 ## 命令契约
@@ -31,11 +31,74 @@ sing update <name>
 sing list
 ```
 
-- `sing install` 只注册服务并开启自启；不处理业务配置。
-- `sing start <name>` 负责把服务命令行更新到 `<name>` 对应配置，再启动服务。
-- `sing restart <name>` 先停止服务，再更新服务命令行并启动服务。
+- `sing install` 通过 NSSM 注册服务并开启自启；不处理业务配置。
+- `sing start <name>` 负责把 NSSM 服务参数更新到 `<name>` 对应配置，再启动服务。
+- `sing restart <name>` 先停止服务，再更新 NSSM 服务参数并启动服务。
 - `sing stop` 不需要配置名。
 - `sing list` 必须标出 active 配置。
+
+## NSSM 服务管理契约
+
+### 1. Scope / Trigger
+
+- Trigger: 修改 Windows 服务安装、卸载、启动、停止、状态查询或 profile 到服务参数的映射。
+
+### 2. Signatures
+
+```text
+nssm.exe install sing-box <sing-box.exe>
+nssm.exe set sing-box Start SERVICE_AUTO_START
+nssm.exe set sing-box Application <sing-box.exe>
+nssm.exe set sing-box AppParameters "run -c \"<profile-path>\""
+nssm.exe status sing-box
+nssm.exe start sing-box
+nssm.exe stop sing-box
+nssm.exe remove sing-box confirm
+```
+
+### 3. Contracts
+
+- `sing install [--bin <path>]` 解析 `sing-box.exe` 后调用 `nssm.exe install`，再设置 `Start` 为 `SERVICE_AUTO_START`。
+- `sing start <name>` 启动前设置 `Application` 为已安装的 `sing-box.exe` 路径，设置 `AppParameters` 为 `run -c "<profile-path>"`。
+- `sing restart <name>` 必须先停止服务，停止成功后再写入 NSSM 参数并启动服务。
+- `nssm.exe` 必须从 `PATH` 解析；项目不下载、不内置 NSSM。
+- 外部命令必须用参数列表调用，不通过 shell 字符串执行。
+
+### 4. Validation & Error Matrix
+
+| 条件 | 行为 |
+|------|------|
+| `nssm.exe` 不在 `PATH` | 命令失败并提示安装 NSSM 且让 `nssm.exe` 可从 `PATH` 访问 |
+| `nssm.exe` 返回非零退出码 | 命令失败并暴露 stderr 或 stdout 摘要 |
+| `nssm.exe status sing-box` 输出 `SERVICE_RUNNING` | `service_is_running()` 返回 `True` |
+| `sing start <name>` 发现服务已运行 | 命令失败并提示使用 `sing restart <name>` |
+
+### 5. Good/Base/Bad Cases
+
+- Good: `subprocess.run([nssm_path, "set", "sing-box", "AppParameters", 'run -c "C:/profiles/home"'], ...)`
+- Base: profile 路径包含空格时，`AppParameters` 仍作为单个参数传给 NSSM。
+- Bad: `subprocess.run(f"nssm.exe set sing-box AppParameters run -c {profile_path}", shell=True)`
+
+### 6. Tests Required
+
+- 安装服务测试断言 `nssm.exe install sing-box <sing-box.exe>` 和 `nssm.exe set sing-box Start SERVICE_AUTO_START`。
+- 配置服务测试断言 `Application` 与 `AppParameters` 分别写入。
+- NSSM 失败测试断言非零退出码转换为 CLI 错误。
+- NSSM 缺失测试断言错误信息说明 `nssm.exe` 不在 `PATH`。
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```python
+subprocess.run(f"nssm.exe start {SERVICE_NAME}", shell=True)
+```
+
+#### Correct
+
+```python
+subprocess.run([nssm_path, "start", SERVICE_NAME], capture_output=True, check=False, text=True)
+```
 
 ## Ruff 工具链契约
 
@@ -430,7 +493,7 @@ updates:
 
 - Typer 命令参数和错误提示。
 - `sing install` 的 PATH 解析、`--bin` 覆盖、找不到二进制失败。
-- `sc.exe` 参数列表构造，不通过 shell 字符串执行。
+- `nssm.exe` 参数列表构造，不通过 shell 字符串执行。
 - `sing start <name>` 服务已运行时失败。
 - `sing restart <name>` 停止失败时不继续启动。
 - `state.json` 读写、active 更新和删除 active 配置失败。

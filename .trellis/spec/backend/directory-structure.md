@@ -32,7 +32,7 @@ def main() -> None:
 新增实现时按职责拆分模块：
 
 - `cli.py`：Typer 应用、命令参数和用户输出。
-- `service.py`：`sc.exe` 调用、服务安装、卸载、启动、停止、重启。
+- `service.py`：`nssm.exe` 调用、服务安装、卸载、启动、停止、重启。
 - `state.py`：`state.json` 读写、profile 名称校验、active 状态维护。
 - `profile.py`：profile URL 下载、本地 profile 文件写入。
 - `errors.py`：面向 CLI 的异常类型。

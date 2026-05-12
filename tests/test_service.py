@@ -18,6 +18,7 @@ def completed_process(
 
 def enable_windows(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(service.sys, "platform", "win32")
+    monkeypatch.setattr(service.shutil, "which", lambda executable: f"C:/tools/{executable}")
 
 
 def test_configure_service_uses_argument_list(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -32,12 +33,19 @@ def test_configure_service_uses_argument_list(monkeypatch: pytest.MonkeyPatch) -
 
     assert commands == [
         [
-            "sc.exe",
-            "config",
+            "C:/tools/nssm.exe",
+            "set",
             "sing-box",
-            "binPath=",
-            '"C:/Program Files/sing-box/sing-box.exe" run -c "C:/Users/me/AppData/profiles/home"',
-        ]
+            "Application",
+            "C:/Program Files/sing-box/sing-box.exe",
+        ],
+        [
+            "C:/tools/nssm.exe",
+            "set",
+            "sing-box",
+            "AppParameters",
+            'run -c "C:/Users/me/AppData/profiles/home"',
+        ],
     ]
 
 
@@ -52,15 +60,32 @@ def test_install_service_registers_autostart(monkeypatch: pytest.MonkeyPatch) ->
     service.install_service(Path("C:/tools/sing-box.exe"), runner)
 
     assert commands == [
-        ["sc.exe", "create", "sing-box", "binPath=", '"C:/tools/sing-box.exe" run', "start=", "auto"]
+        ["C:/tools/nssm.exe", "install", "sing-box", "C:/tools/sing-box.exe"],
+        ["C:/tools/nssm.exe", "set", "sing-box", "Start", "SERVICE_AUTO_START"],
     ]
 
 
-def test_run_sc_surfaces_external_command_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_nssm_surfaces_external_command_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     enable_windows(monkeypatch)
 
     def runner(command: list[str]) -> subprocess.CompletedProcess[str]:
         return completed_process(command, stderr="Access is denied.", returncode=5)
 
     with pytest.raises(ExternalCommandError, match="Access is denied"):
-        service.run_sc(["start", "sing-box"], runner)
+        service.run_nssm(["start", "sing-box"], runner)
+
+
+def test_resolve_nssm_reports_missing_executable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(service.shutil, "which", lambda executable: None)
+
+    with pytest.raises(service.SingCliError, match="nssm.exe was not found"):
+        service.resolve_nssm()
+
+
+def test_service_is_running_reads_nssm_status(monkeypatch: pytest.MonkeyPatch) -> None:
+    enable_windows(monkeypatch)
+
+    def runner(command: list[str]) -> subprocess.CompletedProcess[str]:
+        return completed_process(command, stdout="SERVICE_RUNNING")
+
+    assert service.service_is_running(runner)

@@ -9,6 +9,7 @@ from pathlib import Path
 from .errors import ExternalCommandError, SingCliError
 
 SERVICE_NAME = "sing-box"
+NSSM_EXE = "nssm.exe"
 
 Runner = Callable[[list[str]], subprocess.CompletedProcess[str]]
 
@@ -36,9 +37,16 @@ def resolve_bin(bin_path: Path | None) -> Path:
     return resolved
 
 
-def run_sc(arguments: list[str], runner: Runner = default_runner) -> subprocess.CompletedProcess[str]:
+def resolve_nssm() -> str:
+    found = shutil.which(NSSM_EXE)
+    if found is None:
+        raise SingCliError("nssm.exe was not found in PATH. Install NSSM and make nssm.exe available in PATH.")
+    return found
+
+
+def run_nssm(arguments: list[str], runner: Runner = default_runner) -> subprocess.CompletedProcess[str]:
     ensure_windows()
-    command = ["sc.exe", *arguments]
+    command = [resolve_nssm(), *arguments]
     result = runner(command)
     if result.returncode != 0:
         output = result.stderr.strip() or result.stdout.strip()
@@ -47,33 +55,38 @@ def run_sc(arguments: list[str], runner: Runner = default_runner) -> subprocess.
 
 
 def install_service(bin_path: Path, runner: Runner = default_runner) -> None:
-    run_sc(create_service_arguments(bin_path), runner)
+    run_nssm(create_service_arguments(bin_path), runner)
+    run_nssm(["set", SERVICE_NAME, "Start", "SERVICE_AUTO_START"], runner)
 
 
 def uninstall_service(runner: Runner = default_runner) -> None:
-    run_sc(["delete", SERVICE_NAME], runner)
+    run_nssm(["remove", SERVICE_NAME, "confirm"], runner)
 
 
 def service_is_running(runner: Runner = default_runner) -> bool:
-    result = run_sc(["query", SERVICE_NAME], runner)
-    return "RUNNING" in result.stdout
+    result = run_nssm(["status", SERVICE_NAME], runner)
+    return "SERVICE_RUNNING" in result.stdout
 
 
 def configure_service(bin_path: str, profile_path: str, runner: Runner = default_runner) -> None:
-    run_sc(configure_service_arguments(bin_path, profile_path), runner)
+    for arguments in configure_service_arguments(bin_path, profile_path):
+        run_nssm(arguments, runner)
 
 
 def create_service_arguments(bin_path: Path) -> list[str]:
-    return ["create", SERVICE_NAME, "binPath=", f'"{bin_path}" run', "start=", "auto"]
+    return ["install", SERVICE_NAME, str(bin_path)]
 
 
-def configure_service_arguments(bin_path: str, profile_path: str) -> list[str]:
-    return ["config", SERVICE_NAME, "binPath=", f'"{bin_path}" run -c "{profile_path}"']
+def configure_service_arguments(bin_path: str, profile_path: str) -> list[list[str]]:
+    return [
+        ["set", SERVICE_NAME, "Application", bin_path],
+        ["set", SERVICE_NAME, "AppParameters", f'run -c "{profile_path}"'],
+    ]
 
 
 def start_service(runner: Runner = default_runner) -> None:
-    run_sc(["start", SERVICE_NAME], runner)
+    run_nssm(["start", SERVICE_NAME], runner)
 
 
 def stop_service(runner: Runner = default_runner) -> None:
-    run_sc(["stop", SERVICE_NAME], runner)
+    run_nssm(["stop", SERVICE_NAME], runner)
