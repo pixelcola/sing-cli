@@ -9,7 +9,7 @@
 - 构建后端是 `hatchling.build`。
 - 版本由 `uv-dynamic-versioning` 从 Git 元数据生成。
 - 开发依赖通过 `pyproject.toml` 的 `[dependency-groups].dev` 声明。
-- Ruff 和 ty 是当前已确认的代码质量工具。
+- Ruff、ty 和 pytest 是当前已确认的代码质量工具。
 - CLI 框架使用 `typer`。
 - HTTP 客户端使用 `httpx`。
 - Windows 服务管理使用 `sc.exe`，不使用 `pywin32`。
@@ -47,7 +47,7 @@ sing list
 
 ```toml
 [dependency-groups]
-dev = ["ruff>=0.15.12", "ty>=0.0.35"]
+dev = ["pytest>=9.0.2", "ruff>=0.15.12", "ty>=0.0.35"]
 
 [tool.ruff]
 line-length = 120
@@ -115,6 +115,7 @@ target-version = "py313"
 ```toml
 [dependency-groups]
 dev = [
+    "pytest>=9.0.2",
     "ruff>=0.15.12",
     "ty>=0.0.35",
 ]
@@ -200,6 +201,7 @@ jobs:
       - run: uv run ruff check --output-format=github src
       - run: uv run ruff format --check --diff src
       - run: uv run ty check src
+      - run: uv run pytest
 ```
 
 ### 3. Contracts
@@ -208,6 +210,7 @@ jobs:
 - CI 使用 `uv sync --locked --all-extras --dev`，lockfile 不一致时失败。
 - CI 中的开发工具必须通过 `uv run` 执行，不依赖 shell 环境是否激活 `.venv`。
 - Ruff 和 ty 的 CI 检查范围是 `src`。
+- Python 测试使用 `pytest` 执行。
 - CI 不发布包、不创建 GitHub Release、不上传构建产物。
 - `release.yml` 等发布 workflow 必须等第一版功能、产物类型和 tag 规则明确后再添加。
 
@@ -215,20 +218,20 @@ jobs:
 
 | 条件 | 行为 |
 |------|------|
-| CI 命令直接调用 `ruff` 或 `ty` | 改为 `uv run ruff ...` 或 `uv run ty ...` |
+| CI 命令直接调用 `ruff`、`ty` 或 `pytest` | 改为 `uv run ruff ...`、`uv run ty ...` 或 `uv run pytest` |
 | CI 中 `uv sync --locked` 失败 | 更新并提交 `uv.lock` |
 | CI 把 Ruff 检查范围设为 `.` | 改为 `src` |
 | 未明确发布产物前新增 `release.yml` | 移除发布 workflow，保留 CI |
 
 ### 5. Good/Base/Bad Cases
 
-- Good: CI 使用 `uv run ruff check --output-format=github src` 和 `uv run ty check src`。
+- Good: CI 使用 `uv run ruff check --output-format=github src`、`uv run ty check src` 和 `uv run pytest`。
 - Base: 只改 README 或 SPEC 时不需要新增 CI job。
 - Bad: 在第一版 CLI 功能完成前添加自动发布 GitHub Release 的 workflow。
 
 ### 6. Tests Required
 
-- CI workflow 改动：本地运行 `uv run ruff check src`、`uv run ruff format --check --diff src`、`uv run ty check src`。
+- CI workflow 改动：本地运行 `uv run ruff check src`、`uv run ruff format --check --diff src`、`uv run ty check src` 和 `uv run pytest`。
 - 依赖或 lockfile 改动：确认 `uv sync --locked --all-extras --dev` 可解析。
 - 发布 workflow 改动：确认已定义发布产物、tag 规则和失败回滚方式。
 
@@ -321,6 +324,7 @@ updates:
 - 新增复杂逻辑时拆成可测试函数，由 Typer 命令函数调用。
 - Python 源码改动后运行 `uv run ruff check src`。
 - Python 源码改动后运行 `uv run ty check src`。
+- Python 源码改动后运行 `uv run pytest`。
 
 ## 禁止模式
 

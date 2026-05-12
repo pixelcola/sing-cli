@@ -5,10 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "pixelcola", email = "swakpo@outlook.com" }]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = ["httpx>=0.28.1", "typer>=0.20.0"]
 
 [project.scripts]
-sing-cli = "sing_cli:main"
+sing = "sing_cli.main:main"
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
@@ -23,7 +23,7 @@ style = "pep440"
 bump = true
 
 [dependency-groups]
-dev = ["ruff>=0.15.12", "ty>=0.0.35"]
+dev = ["pytest>=9.0.2", "ruff>=0.15.12", "ty>=0.0.35"]
 
 [tool.ruff]
 line-length = 120
