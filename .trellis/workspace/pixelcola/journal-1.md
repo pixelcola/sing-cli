@@ -104,3 +104,36 @@ Replaced direct sc.exe service management with NSSM commands, updated service te
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Fix Windows subprocess output decoding
+
+**Date**: 2026-05-12
+**Task**: Fix Windows subprocess output decoding
+**Branch**: `fix/windows-subprocess-output-decoding`
+
+### Summary
+
+Created PR #4 for the Windows subprocess decoding fix. Updated NSSM subprocess output capture to use explicit UTF-8 replacement handling, added regression coverage, and recorded the backend decoding contract.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e90a676` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

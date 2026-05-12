@@ -33,6 +33,8 @@ subprocess.run(f"nssm.exe start {service_name}", shell=True)
 
 `nssm.exe` 找不到或返回非零退出码时，CLI 命令失败，并把 stderr 或 stdout 中的系统错误摘要展示给用户。
 
+捕获 `nssm.exe` stdout/stderr 时必须显式指定 `encoding="utf-8"` 和 `errors="replace"`，不得依赖 Windows 系统默认编码。外部输出中出现无法按 UTF-8 解码的字节时，保留替换字符并继续走正常的返回码与错误摘要处理。
+
 ## 服务状态错误
 
 - `sing start <name>` 在服务已运行时失败，并提示使用 `sing restart <name>`。
