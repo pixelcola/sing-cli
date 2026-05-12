@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,15 @@ def completed_process(
 def enable_windows(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(service.sys, "platform", "win32")
     monkeypatch.setattr(service.shutil, "which", lambda executable: f"C:/tools/{executable}")
+
+
+def test_default_runner_replaces_invalid_utf8_output() -> None:
+    result = service.default_runner(
+        [sys.executable, "-c", "import sys; sys.stdout.buffer.write(b'valid' + bytes([0x82]) + b'output')"]
+    )
+
+    assert result.returncode == 0
+    assert result.stdout == "valid\ufffdoutput"
 
 
 def test_configure_service_uses_argument_list(monkeypatch: pytest.MonkeyPatch) -> None:

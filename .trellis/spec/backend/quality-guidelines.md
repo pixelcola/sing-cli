@@ -63,6 +63,7 @@ nssm.exe remove sing-box confirm
 - `sing restart <name>` 必须先停止服务，停止成功后再写入 NSSM 参数并启动服务。
 - `nssm.exe` 必须从 `PATH` 解析；项目不下载、不内置 NSSM。
 - 外部命令必须用参数列表调用，不通过 shell 字符串执行。
+- 捕获外部命令输出时必须显式使用 `encoding="utf-8"` 和 `errors="replace"`，避免 Windows locale 默认编码导致 reader thread 抛出 `UnicodeDecodeError`。
 
 ### 4. Validation & Error Matrix
 
@@ -70,12 +71,13 @@ nssm.exe remove sing-box confirm
 |------|------|
 | `nssm.exe` 不在 `PATH` | 命令失败并提示安装 NSSM 且让 `nssm.exe` 可从 `PATH` 访问 |
 | `nssm.exe` 返回非零退出码 | 命令失败并暴露 stderr 或 stdout 摘要 |
+| `nssm.exe` 输出包含当前系统编码无法解码的字节 | 命令不因解码崩溃，输出中的非法字节以替换字符呈现 |
 | `nssm.exe status sing-box` 输出 `SERVICE_RUNNING` | `service_is_running()` 返回 `True` |
 | `sing start <name>` 发现服务已运行 | 命令失败并提示使用 `sing restart <name>` |
 
 ### 5. Good/Base/Bad Cases
 
-- Good: `subprocess.run([nssm_path, "set", "sing-box", "AppParameters", 'run -c "C:/profiles/home"'], ...)`
+- Good: `subprocess.run([nssm_path, "set", "sing-box", "AppParameters", 'run -c "C:/profiles/home"'], capture_output=True, check=False, text=True, encoding="utf-8", errors="replace")`
 - Base: profile 路径包含空格时，`AppParameters` 仍作为单个参数传给 NSSM。
 - Bad: `subprocess.run(f"nssm.exe set sing-box AppParameters run -c {profile_path}", shell=True)`
 
@@ -85,6 +87,7 @@ nssm.exe remove sing-box confirm
 - 配置服务测试断言 `Application` 与 `AppParameters` 分别写入。
 - NSSM 失败测试断言非零退出码转换为 CLI 错误。
 - NSSM 缺失测试断言错误信息说明 `nssm.exe` 不在 `PATH`。
+- 默认 runner 测试断言非法 UTF-8 输出不会触发 `UnicodeDecodeError`，并以替换字符保留在 stdout/stderr 中。
 
 ### 7. Wrong vs Correct
 
@@ -97,7 +100,14 @@ subprocess.run(f"nssm.exe start {SERVICE_NAME}", shell=True)
 #### Correct
 
 ```python
-subprocess.run([nssm_path, "start", SERVICE_NAME], capture_output=True, check=False, text=True)
+subprocess.run(
+    [nssm_path, "start", SERVICE_NAME],
+    capture_output=True,
+    check=False,
+    text=True,
+    encoding="utf-8",
+    errors="replace",
+)
 ```
 
 ## Ruff 工具链契约

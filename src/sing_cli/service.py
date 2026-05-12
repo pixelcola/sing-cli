@@ -15,7 +15,7 @@ Runner = Callable[[list[str]], subprocess.CompletedProcess[str]]
 
 
 def default_runner(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, capture_output=True, check=False, text=True)
+    return subprocess.run(command, capture_output=True, check=False, text=True, encoding="utf-8", errors="replace")
 
 
 def ensure_windows() -> None:
