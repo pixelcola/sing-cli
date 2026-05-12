@@ -37,3 +37,35 @@ def test_state_round_trip(tmp_path: Path) -> None:
 def test_require_profile_reports_missing_name() -> None:
     with pytest.raises(SingCliError, match="Profile does not exist"):
         require_profile(State(), "missing")
+
+
+def test_load_state_rejects_non_object_root(tmp_path: Path) -> None:
+    path = tmp_path / "state.json"
+    path.write_text("[]", encoding="utf-8")
+
+    with pytest.raises(SingCliError, match="must contain a JSON object"):
+        load_state(path)
+
+
+def test_load_state_rejects_non_object_profiles(tmp_path: Path) -> None:
+    path = tmp_path / "state.json"
+    path.write_text('{"profiles": []}', encoding="utf-8")
+
+    with pytest.raises(SingCliError, match="profiles"):
+        load_state(path)
+
+
+def test_load_state_rejects_invalid_profile_entry(tmp_path: Path) -> None:
+    path = tmp_path / "state.json"
+    path.write_text('{"profiles": {"home": {"url": 1, "path": "p", "updated_at": "t"}}}', encoding="utf-8")
+
+    with pytest.raises(SingCliError, match="invalid profile entry"):
+        load_state(path)
+
+
+def test_load_state_rejects_non_string_optional_fields(tmp_path: Path) -> None:
+    path = tmp_path / "state.json"
+    path.write_text('{"bin": 1, "active": null, "profiles": {}}', encoding="utf-8")
+
+    with pytest.raises(SingCliError, match="State field 'bin'"):
+        load_state(path)
