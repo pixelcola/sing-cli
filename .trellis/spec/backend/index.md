@@ -40,7 +40,7 @@ sing install [--bin <path>]
 sing uninstall
 sing start <name>
 sing stop
-sing restart <name>
+sing restart
 sing add <name> <url>
 sing remove <name>
 sing update <name>
@@ -49,8 +49,8 @@ sing list
 
 - `sing install` 通过 NSSM 注册 `sing-box` Windows 服务并开启自启；默认使用 `PATH` 中的 `sing-box.exe`，`--bin` 可指定自定义路径。
 - `sing install` 不下载、不升级 `sing-box.exe` 或 `nssm.exe`，也不指定或写入业务 profile。
-- `sing start <name>` 使用 `<name>` 对应的本地 profile 启动服务；服务已运行时失败并提示使用 `sing restart <name>`。
-- `sing restart <name>` 停止当前服务后，用 `<name>` 对应 profile 重新启动。
+- `sing start <name>` 使用 `<name>` 对应的本地 profile 启动服务；服务已运行时失败并提示使用 `sing restart`。
+- `sing restart` 停止当前服务后，用 active profile 重新启动。
 - `sing stop` 停止服务，不需要 profile 名。
 - `sing add <name> <url>` 添加命名 profile；URL 返回完整 `sing-box` JSON profile。
 - `sing update <name>` 从已保存 URL 重新下载 profile。
@@ -59,13 +59,13 @@ sing list
 
 ## 服务命令行
 
-`sing start <name>` 和 `sing restart <name>` 启动前必须先更新 NSSM 服务参数：
+`sing start <name>` 和 `sing restart` 启动前必须先更新 NSSM 服务参数：
 
 ```text
 nssm.exe set sing-box Application <sing-box.exe>
 nssm.exe set sing-box AppParameters "run -c \"<profile-path>\""
 ```
 
-随后再启动 `sing-box` 服务。Windows 自启时沿用最后一次 `sing start <name>` 或 `sing restart <name>` 写入的 profile。
+随后再启动 `sing-box` 服务。Windows 自启时沿用最后一次 `sing start <name>` 或 `sing restart` 写入的 profile。
 
 调用 `nssm.exe` 必须使用参数列表，不使用 shell 字符串拼接。

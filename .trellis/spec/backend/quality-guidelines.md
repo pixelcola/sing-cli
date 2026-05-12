@@ -24,7 +24,7 @@ sing install [--bin <path>]
 sing uninstall
 sing start <name>
 sing stop
-sing restart <name>
+sing restart
 sing add <name> <url>
 sing remove <name>
 sing update <name>
@@ -33,7 +33,7 @@ sing list
 
 - `sing install` 通过 NSSM 注册服务并开启自启；不处理业务配置。
 - `sing start <name>` 负责把 NSSM 服务参数更新到 `<name>` 对应配置，再启动服务。
-- `sing restart <name>` 先停止服务，再更新 NSSM 服务参数并启动服务。
+- `sing restart` 先停止服务，再用 active 配置更新 NSSM 服务参数并启动服务。
 - `sing stop` 不需要配置名。
 - `sing list` 必须标出 active 配置。
 
@@ -60,7 +60,7 @@ nssm.exe remove sing-box confirm
 
 - `sing install [--bin <path>]` 解析 `sing-box.exe` 后调用 `nssm.exe install`，再设置 `Start` 为 `SERVICE_AUTO_START`。
 - `sing start <name>` 启动前设置 `Application` 为已安装的 `sing-box.exe` 路径，设置 `AppParameters` 为 `run -c "<profile-path>"`。
-- `sing restart <name>` 必须先停止服务，停止成功后再写入 NSSM 参数并启动服务。
+- `sing restart` 必须先停止服务，停止成功后再用 active 配置写入 NSSM 参数并启动服务。
 - `nssm.exe` 必须从 `PATH` 解析；项目不下载、不内置 NSSM。
 - 外部命令必须用参数列表调用，不通过 shell 字符串执行。
 - 捕获外部命令输出时必须显式使用 `encoding="utf-8"` 和 `errors="replace"`，避免 Windows locale 默认编码导致 reader thread 抛出 `UnicodeDecodeError`。
@@ -73,7 +73,9 @@ nssm.exe remove sing-box confirm
 | `nssm.exe` 返回非零退出码 | 命令失败并暴露 stderr 或 stdout 摘要 |
 | `nssm.exe` 输出包含当前系统编码无法解码的字节 | 命令不因解码崩溃，输出中的非法字节以替换字符呈现 |
 | `nssm.exe status sing-box` 输出 `SERVICE_RUNNING` | `service_is_running()` 返回 `True` |
-| `sing start <name>` 发现服务已运行 | 命令失败并提示使用 `sing restart <name>` |
+| `sing start <name>` 发现服务已运行 | 命令失败并提示使用 `sing restart` |
+| `sing restart` 没有 active 配置 | 命令失败并提示先运行 `sing start <name>` |
+| `sing restart` 的 active 配置不存在 | 命令失败并提示 profile 不存在 |
 
 ### 5. Good/Base/Bad Cases
 
@@ -505,7 +507,10 @@ updates:
 - `sing install` 的 PATH 解析、`--bin` 覆盖、找不到二进制失败。
 - `nssm.exe` 参数列表构造，不通过 shell 字符串执行。
 - `sing start <name>` 服务已运行时失败。
-- `sing restart <name>` 停止失败时不继续启动。
+- `sing restart` 停止失败时不继续启动。
+- `sing restart` 不接受 profile 名参数。
+- `sing restart` 使用 active 配置重启。
+- `sing restart` 没有 active 配置或 active 配置不存在时失败。
 - `state.json` 读写、active 更新和删除 active 配置失败。
 - 配置名称校验。
 - HTTP 下载失败、写入失败和更新成功路径。

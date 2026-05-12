@@ -90,7 +90,7 @@ def start(name: str) -> None:
         entry = require_profile(state, name)
         bin_path = require_installed_bin(state)
         if service_is_running():
-            raise SingCliError(f"sing-box service is already running. Use 'sing restart {name}'.")
+            raise SingCliError("sing-box service is already running. Use 'sing restart'.")
         configure_service(bin_path, entry.path)
         start_service()
         state.active = name
@@ -110,19 +110,19 @@ def stop() -> None:
 
 
 @app.command()
-def restart(name: str) -> None:
+def restart() -> None:
     try:
         state = load_cli_state()
-        entry = require_profile(state, name)
+        if state.active is None:
+            raise SingCliError("No active profile. Run 'sing start <name>' first.")
+        entry = require_profile(state, state.active)
         bin_path = require_installed_bin(state)
         stop_service()
         configure_service(bin_path, entry.path)
         start_service()
-        state.active = name
-        save_cli_state(state)
     except SingCliError as error:
         fail(error)
-    typer.echo(f"Restarted {name}")
+    typer.echo(f"Restarted {state.active}")
 
 
 @app.command()
