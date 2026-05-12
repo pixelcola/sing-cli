@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 4
+- **Total Sessions**: 5
 - **Last Active**: 2026-05-12
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~139 | Active |
+| `journal-1.md` | ~172 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 5 | 2026-05-12 | Fix restart active profile | `010e59e` | `fix/restart-active-config` |
 | 4 | 2026-05-12 | Fix Windows subprocess output decoding | `e90a676` | `fix/windows-subprocess-output-decoding` |
 | 3 | 2026-05-12 | Use NSSM for Windows service | `72c1b0d` | `fix/use-nssm-service` |
 | 2 | 2026-05-12 | Windows sing-box CLI | `2f18462` | `feature/windows-sing-box-cli` |

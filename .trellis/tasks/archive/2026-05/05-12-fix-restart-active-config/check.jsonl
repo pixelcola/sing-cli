@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Verify backend command contract and docs remain consistent."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify restart errors remain explicit and user-facing failures are not swallowed."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify test coverage and required quality commands."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Verify CLI output remains concise and separated by success/error path."}

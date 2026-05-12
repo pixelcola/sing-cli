@@ -137,3 +137,36 @@ Created PR #4 for the Windows subprocess decoding fix. Updated NSSM subprocess o
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Fix restart active profile
+
+**Date**: 2026-05-12
+**Task**: Fix restart active profile
+**Branch**: `fix/restart-active-config`
+
+### Summary
+
+Changed sing restart to use the active profile without accepting a profile argument, updated docs/specs, added CLI regression tests, and opened PR #5.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `010e59e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

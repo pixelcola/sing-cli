@@ -37,8 +37,8 @@ subprocess.run(f"nssm.exe start {service_name}", shell=True)
 
 ## 服务状态错误
 
-- `sing start <name>` 在服务已运行时失败，并提示使用 `sing restart <name>`。
-- `sing restart <name>` 停止失败时不得继续启动。
+- `sing start <name>` 在服务已运行时失败，并提示使用 `sing restart`。
+- `sing restart` 停止失败时不得继续启动。
 - `sing stop` 在服务停止失败时返回失败。
 - `sing uninstall` 删除服务失败时返回失败。
 - 第一版不做隐式重试，不做自动修复服务状态。
@@ -46,7 +46,8 @@ subprocess.run(f"nssm.exe start {service_name}", shell=True)
 ## Profile 状态错误
 
 - profile 名不符合命名规则时失败。
-- `sing start <name>`、`sing restart <name>`、`sing update <name>` 找不到 profile 名时失败。
+- `sing start <name>`、`sing update <name>` 找不到 profile 名时失败。
+- `sing restart` 没有 active profile 或 active profile 不存在时失败。
 - `sing remove <name>` 删除 active profile 时失败。
 - 下载 profile URL 失败、HTTP 状态失败、写入本地文件失败时命令失败。
 - `sing add` 和 `sing update` 不主动调用 `sing-box check`；profile 有效性由 `sing start <name>` 启动时的 `sing-box` 行为暴露。
