@@ -41,17 +41,17 @@ subprocess.run(f"sc.exe start {service_name}", shell=True)
 - `sing uninstall` 删除服务失败时返回失败。
 - 第一版不做隐式重试，不做自动修复服务状态。
 
-## 配置状态错误
+## Profile 状态错误
 
-- 配置名不符合命名规则时失败。
-- `sing start <name>`、`sing restart <name>`、`sing update <name>` 找不到配置名时失败。
-- `sing remove <name>` 删除 active 配置时失败。
-- 下载配置 URL 失败、HTTP 状态失败、写入本地文件失败时命令失败。
-- `sing add` 和 `sing update` 不主动调用 `sing-box check`；配置有效性由 `sing start <name>` 启动时的 `sing-box` 行为暴露。
+- profile 名不符合命名规则时失败。
+- `sing start <name>`、`sing restart <name>`、`sing update <name>` 找不到 profile 名时失败。
+- `sing remove <name>` 删除 active profile 时失败。
+- 下载 profile URL 失败、HTTP 状态失败、写入本地文件失败时命令失败。
+- `sing add` 和 `sing update` 不主动调用 `sing-box check`；profile 有效性由 `sing start <name>` 启动时的 `sing-box` 行为暴露。
 
 ## 常见错误
 
 - 捕获所有异常后继续执行，会让用户误以为服务已经安装或启动。
 - 在服务已运行时让 `start` 自动重启，会隐藏用户选择的配置切换行为。
-- 删除 active 配置会让 `state.json` 和 Windows 服务命令行分离。
+- 删除 active profile 会让 `state.json` 和 Windows 服务命令行分离。
 - 把 `sc.exe` 命令拼成 shell 字符串会破坏带空格路径，并增加注入风险。
