@@ -9,7 +9,7 @@
 | [目录结构](./directory-structure.md) | 包布局、入口点、本地数据布局 | 已填写 |
 | [数据库规范](./database-guidelines.md) | 无数据库约束、本地 JSON 状态边界 | 已填写 |
 | [错误处理](./error-handling.md) | CLI 错误、`sc.exe` 错误、配置状态错误 | 已填写 |
-| [质量规范](./quality-guidelines.md) | Python 版本、依赖、命令契约、测试要求 | 已填写 |
+| [质量规范](./quality-guidelines.md) | Python 版本、依赖、Ruff/ty/CI/Dependabot 契约、命令契约、测试要求 | 已填写 |
 | [日志规范](./logging-guidelines.md) | CLI 输出边界、stdout/stderr 规则 | 已填写 |
 
 ## 开发前检查清单
@@ -22,7 +22,8 @@
 ## 项目事实
 
 - 项目使用 Python，最低版本为 `>=3.13`。
-- 构建后端是 `uv_build`。
+- 构建后端是 `hatchling.build`。
+- 版本由 `uv-dynamic-versioning` 从 Git 元数据生成。
 - 可执行命令由 `pyproject.toml` 的 `[project.scripts]` 声明：`sing-cli = "sing_cli:main"`。
 - 当前源码位于 `src/sing_cli/`。
 - CLI 框架使用 `typer`，HTTP 下载使用 `httpx`。

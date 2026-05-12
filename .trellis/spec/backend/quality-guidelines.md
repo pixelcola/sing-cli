@@ -6,7 +6,10 @@
 
 - Python 版本下限是 `>=3.13`。
 - 生产代码放在 `src/sing_cli/`。
-- 构建后端是 `uv_build`。
+- 构建后端是 `hatchling.build`。
+- 版本由 `uv-dynamic-versioning` 从 Git 元数据生成。
+- 开发依赖通过 `pyproject.toml` 的 `[dependency-groups].dev` 声明。
+- Ruff 和 ty 是当前已确认的代码质量工具。
 - CLI 框架使用 `typer`。
 - HTTP 客户端使用 `httpx`。
 - Windows 服务管理使用 `sc.exe`，不使用 `pywin32`。
@@ -34,6 +37,280 @@ sing list
 - `sing stop` 不需要配置名。
 - `sing list` 必须标出 active 配置。
 
+## Ruff 工具链契约
+
+### 1. Scope / Trigger
+
+- Trigger: 修改 Python 源码、`pyproject.toml`、开发依赖、lint 规则或格式化相关配置。
+
+### 2. Signatures
+
+```toml
+[dependency-groups]
+dev = ["ruff>=0.15.12", "ty>=0.0.35"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["B904", "E501", "B008", "C901", "W191"]
+```
+
+### 3. Contracts
+
+- `uv.lock` 必须和 `pyproject.toml` 中的开发依赖保持一致。
+- Ruff 配置只放在 `pyproject.toml`，不新增独立 Ruff 配置文件。
+- Python 语法目标必须和项目 Python 下限一致，当前为 `py313`。
+- Ruff 的项目检查范围是 `src`，不要默认检查 `.trellis/scripts`。
+- 单行长度上限为 120；`E501` 已忽略，不用为纯粹行宽拆分降低可读性。
+
+### 4. Validation & Error Matrix
+
+| 条件 | 行为 |
+|------|------|
+| Python 代码变更后 `uv run ruff check src` 失败 | 修复 lint 错误后再交付 |
+| `pyproject.toml` 开发依赖变更但 `uv.lock` 未更新 | 更新 lockfile 后再交付 |
+| 新增 lint 规则导致 `src` 下现有代码大面积失败 | 先修复或缩小规则范围，不提交破坏性规则 |
+| 需要忽略单个 lint 问题 | 使用局部 `# noqa`，并让原因能从代码上下文看出 |
+
+### 5. Good/Base/Bad Cases
+
+- Good: 新增 Python 代码后运行 `uv run ruff check src`，并修复导入顺序、未使用变量和现代语法提示。
+- Base: 只改文档时不强制运行 Ruff，但要检查文档语言、路径和占位符。
+- Bad: 修改 Ruff 规则或开发依赖后不更新 `uv.lock`。
+- Bad: 在 CI 里运行 `ruff check .`，把 Trellis 管理脚本纳入项目业务 lint 范围。
+
+### 6. Tests Required
+
+- Python 源码改动：运行 `uv run ruff check src`，断言退出码为 0。
+- `pyproject.toml` 开发依赖改动：确认 `uv.lock` 包含对应依赖版本。
+- Ruff 规则改动：运行 `uv run ruff check src`，断言业务源码不会因规则漂移失败。
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```toml
+[tool.ruff]
+target-version = "py312"
+```
+
+#### Correct
+
+```toml
+[tool.ruff]
+target-version = "py313"
+```
+
+## ty 工具链契约
+
+### 1. Scope / Trigger
+
+- Trigger: 修改 Python 源码、`pyproject.toml`、开发依赖、类型检查配置或 Windows 平台相关代码。
+
+### 2. Signatures
+
+```toml
+[dependency-groups]
+dev = [
+    "ruff>=0.15.12",
+    "ty>=0.0.35",
+]
+
+[tool.ty.environment]
+python-version = "3.13"
+
+[tool.ty.src]
+include = ["src"]
+```
+
+### 3. Contracts
+
+- ty 配置只放在 `pyproject.toml` 的 `[tool.ty]` 下，不新增 `ty.toml`。
+- `python-version` 必须和项目 Python 下限一致，当前为 `3.13`。
+- `include` 必须覆盖 `src` 布局。
+- 不添加与当前检查范围重复的 `root` 配置。
+- 不添加只影响输出展示的 `terminal.output-format` 配置，保持基础配置最小。
+- `uv.lock` 必须和 `pyproject.toml` 中的 ty 开发依赖保持一致。
+
+### 4. Validation & Error Matrix
+
+| 条件 | 行为 |
+|------|------|
+| Python 代码变更后 `uv run ty check src` 失败 | 修复类型错误后再交付 |
+| `pyproject.toml` ty 依赖变更但 `uv.lock` 未更新 | 更新 lockfile 后再交付 |
+| 需要忽略单个 ty 问题 | 使用局部忽略，不添加全局静默规则 |
+
+### 5. Good/Base/Bad Cases
+
+- Good: 新增 Python 代码后运行 `uv run ty check src`，并修复类型错误。
+- Base: 只改文档时不强制运行 ty。
+- Bad: 同时写 `root = ["./src"]` 和 `include = ["src"]` 表达同一个基础源码范围。
+
+### 6. Tests Required
+
+- Python 源码改动：运行 `uv run ty check src`，断言退出码为 0。
+- ty 配置改动：运行 `uv run ty check src`，断言 `src` 下代码被检查。
+- `pyproject.toml` 开发依赖改动：确认 `uv.lock` 包含对应 ty 版本。
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```toml
+[tool.ty.environment]
+root = ["./src"]
+
+[tool.ty.src]
+include = ["src"]
+```
+
+#### Correct
+
+```toml
+[tool.ty.src]
+include = ["src"]
+```
+
+## CI 契约
+
+### 1. Scope / Trigger
+
+- Trigger: 修改 `.github/workflows/ci.yml`、`.github/dependabot.yml`、开发依赖、`pyproject.toml`、`uv.lock` 或质量检查命令。
+
+### 2. Signatures
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint-and-format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+      - run: uv python install
+      - run: uv sync --locked --all-extras --dev
+      - run: uv run ruff check --output-format=github src
+      - run: uv run ruff format --check --diff src
+      - run: uv run ty check src
+```
+
+### 3. Contracts
+
+- CI 只在 `push` 到 `main` 和 `pull_request` 时运行。
+- CI 使用 `uv sync --locked --all-extras --dev`，lockfile 不一致时失败。
+- CI 中的开发工具必须通过 `uv run` 执行，不依赖 shell 环境是否激活 `.venv`。
+- Ruff 和 ty 的 CI 检查范围是 `src`。
+- CI 不发布包、不创建 GitHub Release、不上传构建产物。
+- `release.yml` 等发布 workflow 必须等第一版功能、产物类型和 tag 规则明确后再添加。
+
+### 4. Validation & Error Matrix
+
+| 条件 | 行为 |
+|------|------|
+| CI 命令直接调用 `ruff` 或 `ty` | 改为 `uv run ruff ...` 或 `uv run ty ...` |
+| CI 中 `uv sync --locked` 失败 | 更新并提交 `uv.lock` |
+| CI 把 Ruff 检查范围设为 `.` | 改为 `src` |
+| 未明确发布产物前新增 `release.yml` | 移除发布 workflow，保留 CI |
+
+### 5. Good/Base/Bad Cases
+
+- Good: CI 使用 `uv run ruff check --output-format=github src` 和 `uv run ty check src`。
+- Base: 只改 README 或 SPEC 时不需要新增 CI job。
+- Bad: 在第一版 CLI 功能完成前添加自动发布 GitHub Release 的 workflow。
+
+### 6. Tests Required
+
+- CI workflow 改动：本地运行 `uv run ruff check src`、`uv run ruff format --check --diff src`、`uv run ty check src`。
+- 依赖或 lockfile 改动：确认 `uv sync --locked --all-extras --dev` 可解析。
+- 发布 workflow 改动：确认已定义发布产物、tag 规则和失败回滚方式。
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```yaml
+- run: ruff check .
+```
+
+#### Correct
+
+```yaml
+- run: uv run ruff check --output-format=github src
+```
+
+## Dependabot 契约
+
+### 1. Scope / Trigger
+
+- Trigger: 修改 GitHub Actions 版本、uv 依赖、`uv.lock` 或 `.github/dependabot.yml`。
+
+### 2. Signatures
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+```
+
+### 3. Contracts
+
+- Dependabot 只跟踪 GitHub Actions 和 uv 依赖。
+- 检查周期固定为 monthly。
+- 依赖更新必须经过 CI，不直接绕过 `uv sync --locked --all-extras --dev`。
+- 不为未使用的生态系统添加 Dependabot 配置。
+
+### 4. Validation & Error Matrix
+
+| 条件 | 行为 |
+|------|------|
+| 新增开发依赖后 Dependabot 不覆盖对应生态系统 | 更新 `.github/dependabot.yml` |
+| Dependabot PR 导致 CI 失败 | 修复配置或依赖约束后再合并 |
+| 新增未使用生态系统的 Dependabot 配置 | 删除该条目 |
+
+### 5. Good/Base/Bad Cases
+
+- Good: `github-actions` 和 `uv` 都按月检查。
+- Base: 手动升级单个依赖后保持 Dependabot 配置不变。
+- Bad: 为没有 npm、Docker 或 pip requirements 文件的项目添加对应 Dependabot 生态系统。
+
+### 6. Tests Required
+
+- `.github/dependabot.yml` 改动：检查 YAML 缩进、`package-ecosystem` 名称和 `directory` 路径。
+- uv 依赖更新：运行 `uv sync --locked --all-extras --dev`。
+- GitHub Actions 更新：确认 `.github/workflows/*.yml` 仍引用有效 action。
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```yaml
+- package-ecosystem: "npm"
+  directory: "/"
+```
+
+#### Correct
+
+```yaml
+- package-ecosystem: "uv"
+  directory: "/"
+```
+
 ## 必需模式
 
 - 函数签名保持类型标注。
@@ -42,6 +319,8 @@ sing list
 - 写入 `state.json` 和配置文件时，失败必须显式暴露。
 - 修改服务命令行、状态字段、命令参数或依赖前，先搜索相关引用。
 - 新增复杂逻辑时拆成可测试函数，由 Typer 命令函数调用。
+- Python 源码改动后运行 `uv run ruff check src`。
+- Python 源码改动后运行 `uv run ty check src`。
 
 ## 禁止模式
 
