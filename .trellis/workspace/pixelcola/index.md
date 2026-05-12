@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
+- **Total Sessions**: 7
 - **Last Active**: 2026-05-12
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~205 | Active |
+| `journal-1.md` | ~238 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-05-12 | Expand test coverage | `764205a` | `test/improve-coverage` |
 | 6 | 2026-05-12 | Update README installation instructions | `49680f6` | `docs/readme-install-uv-tool` |
 | 5 | 2026-05-12 | Fix restart active profile | `010e59e` | `fix/restart-active-config` |
 | 4 | 2026-05-12 | Fix Windows subprocess output decoding | `e90a676` | `fix/windows-subprocess-output-decoding` |
