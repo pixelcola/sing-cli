@@ -21,8 +21,54 @@ the rest conversationally.
 
 ## Status (update the checkboxes as you complete each item)
 
-- [ ] Fill backend guidelines
-- [ ] Add code examples
+- [x] Fill backend guidelines
+- [x] Add code examples
+
+---
+
+## Confirmed Requirements
+
+- SPEC 使用中文编写。
+- 项目目标是实现一个运行在 Windows 上的 Python CLI 应用。
+- 背景：`sing-box` 在 Windows 上缺少类似 Linux 服务管理的使用体验。
+- CLI 需要支持安装和卸载 `sing-box` Windows 服务。
+- CLI 需要支持启动、停止、重启等 `sing-box` 服务管理操作。
+- CLI 需要支持管理 `sing-box` 配置。
+- CLI 不负责下载或升级 `sing-box.exe`。
+- `sing install` 默认使用 `PATH` 中可解析到的 `sing-box.exe`。
+- `sing install --bin <path>` 支持指定自定义 `sing-box.exe` 路径。
+- `sing install` 只负责注册 Windows 服务并开启自启，不负责指定或写入 `sing-box` 配置。
+- Windows 服务注册和控制使用系统内置 `sc.exe`。
+- 调用 `sc.exe` 时使用参数列表，不用 shell 字符串拼接。
+- Windows 服务名固定为 `sing-box`。
+- 第一版不支持通过 `--name` 管理多个 `sing-box` 服务实例。
+- 配置管理使用命名 URL 条目模型。
+- `sing add <name> <url>` 添加一个配置来源。
+- `sing remove <name>` 删除指定名称的配置来源。
+- `sing update <name>` 更新指定名称对应的配置内容。
+- `sing list` 列出已添加的配置来源。
+- 配置 URL 返回完整的 `sing-box` JSON 配置文件，不处理代理订阅格式转换。
+- `sing add` 和 `sing update` 不主动调用 `sing-box check` 校验配置；配置有效性由 `sing start <name>` 启动时的 `sing-box` 行为暴露。
+- `sing start <name>` 使用 `<name>` 对应的本地配置启动 `sing-box` 服务。
+- `sing start <name>` 在服务已运行时失败，并提示使用 `sing restart <name>`；不做隐式重启。
+- `sing restart <name>` 停止当前服务后，再使用 `<name>` 对应配置启动。
+- `sing stop` 停止服务，不需要配置名。
+- `sing start <name>` 和 `sing restart <name>` 启动前，使用 `sc.exe config sing-box binPath= "<sing-box.exe> run -c <config-path>"` 更新服务命令行。
+- Windows 服务自启时沿用最后一次 `sing start <name>` 或 `sing restart <name>` 写入的配置。
+- 第三方 CLI 框架使用 `typer`。
+- 第三方 HTTP 客户端使用 `httpx` 下载配置 URL。
+- 不使用 `pywin32` 管理 Windows 服务；服务管理统一通过 `sc.exe`。
+- 本地配置和索引存放在 `typer.get_app_dir()` 返回的应用目录中。
+- `typer.get_app_dir()` 的应用名使用 `sing-cli`。
+- 本地数据目录包含 `state.json` 和 `configs/` 子目录。
+- `state.json` 顶层包含 `bin`、`active`、`configs` 字段。
+- `configs/<name>.json` 保存 `<name>` 对应 URL 下载到的完整 `sing-box` JSON 配置。
+- 配置名称用于文件名，只允许字母、数字、下划线、短横线和点。
+- `active` 表示最后一次成功写入 Windows 服务命令行并启动的配置名。
+- `sing start <name>` 和 `sing restart <name>` 成功启动后，将 `active` 设为 `<name>`。
+- `sing stop` 不清空 `active`。
+- `sing remove <name>` 删除 active 配置时失败，避免状态和服务命令行不一致。
+- `sing list` 标出 active 配置。
 
 ---
 

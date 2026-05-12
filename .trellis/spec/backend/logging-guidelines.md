@@ -1,51 +1,38 @@
-# Logging Guidelines
+# 日志规范
 
-> How logging is done in this project.
+第一版不引入日志框架。CLI 使用明确的 stdout/stderr 输出，保持脚本调用时可预测。
 
----
+## 输出边界
 
-## Overview
+- stdout 只输出命令的正常结果。
+- stderr 输出错误、诊断和外部命令失败摘要。
+- 不在底层模块随意 `print()`；输出由 CLI 边界统一处理。
+- 不把用户可解析的列表结果和调试信息混在 stdout。
 
-<!--
-Document your project's logging conventions here.
+## 命令输出
 
-Questions to answer:
-- What logging library do you use?
-- What are the log levels and when to use each?
-- What should be logged?
-- What should NOT be logged (PII, secrets)?
--->
+- `sing list` 输出已添加配置来源，并标出 active 配置。
+- `sing install`、`sing uninstall`、`sing start`、`sing stop`、`sing restart`、`sing add`、`sing remove`、`sing update` 成功时输出简短结果。
+- 外部命令失败时，错误摘要写到 stderr。
 
-(To be filled by the team)
+## 不记录内容
 
----
+- 不记录配置 URL 中可能包含的凭据。
+- 不记录完整环境变量。
+- 不记录密钥、令牌或代理认证信息。
+- 不把完整 `sing-box` 配置作为错误日志输出。
 
-## Log Levels
+## 引入日志框架前的要求
 
-<!-- When to use each level: debug, info, warn, error -->
+只有出现后台进程、长任务或调试级别需求时才引入日志框架。引入前必须明确：
 
-(To be filled by the team)
+- 日志级别。
+- 输出位置。
+- 是否需要结构化格式。
+- 默认是否安静。
 
----
+## 禁止模式
 
-## Structured Logging
-
-<!-- Log format, required fields -->
-
-(To be filled by the team)
-
----
-
-## What to Log
-
-<!-- Important events to log -->
-
-(To be filled by the team)
-
----
-
-## What NOT to Log
-
-<!-- Sensitive data, PII, secrets -->
-
-(To be filled by the team)
+- 不添加未使用的日志依赖。
+- 不用日志替代错误处理。
+- 不吞掉失败后只写一条日志。
