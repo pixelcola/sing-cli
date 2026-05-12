@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Verify README install docs match CLI project facts"}
+{"file": ".trellis/tasks/05-12-readme-install-uv-tool/research/uv-tool-commands.md", "reason": "Verify README uses valid uv tool commands"}
