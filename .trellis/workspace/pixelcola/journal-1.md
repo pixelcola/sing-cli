@@ -38,3 +38,36 @@ Filled Chinese backend SPEC for the Windows Python CLI design: sing-box service 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 2: Windows sing-box CLI
+
+**Date**: 2026-05-12
+**Task**: Windows sing-box CLI
+**Branch**: `feature/windows-sing-box-cli`
+
+### Summary
+
+Implemented the Windows sing-box CLI with Typer commands, local profile state, service control wrappers, tests, CI, README, and backend spec updates. Created PR #1.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2f18462` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
