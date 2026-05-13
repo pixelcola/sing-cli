@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
 
 import typer
@@ -62,6 +64,17 @@ def fail(error: SingCliError) -> None:
     raise typer.Exit(1)
 
 
+def report_cli_errors[**P](command: Callable[P, None]) -> Callable[P, None]:
+    @wraps(command)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+        try:
+            command(*args, **kwargs)
+        except SingCliError as error:
+            fail(error)
+
+    return wrapper
+
+
 def to_local_timezone(value: datetime) -> datetime:
     return value.astimezone()
 
@@ -79,124 +92,106 @@ def format_local_updated_at(profile_name: str, updated_at: str) -> str:
 
 
 @app.command()
+@report_cli_errors
 def install(bin: Path | None = typer.Option(None, "--bin", help="Path to sing-box.exe.")) -> None:
-    try:
-        resolved_bin = resolve_bin(bin)
-        install_service(resolved_bin)
-        state = load_cli_state()
-        state.bin = str(resolved_bin)
-        save_cli_state(state)
-    except SingCliError as error:
-        fail(error)
+    resolved_bin = resolve_bin(bin)
+    install_service(resolved_bin)
+    state = load_cli_state()
+    state.bin = str(resolved_bin)
+    save_cli_state(state)
     typer.echo(f"Installed {resolved_bin}")
 
 
 @app.command()
+@report_cli_errors
 def uninstall() -> None:
-    try:
-        uninstall_service()
-    except SingCliError as error:
-        fail(error)
+    uninstall_service()
     typer.echo("Uninstalled sing-box service")
 
 
 @app.command()
+@report_cli_errors
 def start(name: str) -> None:
-    try:
-        state = load_cli_state()
-        entry = require_profile(state, name)
-        bin_path = require_installed_bin(state)
-        if service_is_running():
-            raise SingCliError("sing-box service is already running. Use 'sing restart'.")
-        configure_service(bin_path, entry.path)
-        start_service()
-        state.active = name
-        save_cli_state(state)
-    except SingCliError as error:
-        fail(error)
+    state = load_cli_state()
+    entry = require_profile(state, name)
+    bin_path = require_installed_bin(state)
+    if service_is_running():
+        raise SingCliError("sing-box service is already running. Use 'sing restart'.")
+    configure_service(bin_path, entry.path)
+    start_service()
+    state.active = name
+    save_cli_state(state)
     typer.echo(f"Started {name}")
 
 
 @app.command()
+@report_cli_errors
 def stop() -> None:
-    try:
-        stop_service()
-    except SingCliError as error:
-        fail(error)
+    stop_service()
     typer.echo("Stopped sing-box service")
 
 
 @app.command()
+@report_cli_errors
 def restart() -> None:
-    try:
-        state = load_cli_state()
-        if state.active is None:
-            raise SingCliError("No active profile. Run 'sing start <name>' first.")
-        entry = require_profile(state, state.active)
-        bin_path = require_installed_bin(state)
-        stop_service()
-        configure_service(bin_path, entry.path)
-        start_service()
-    except SingCliError as error:
-        fail(error)
+    state = load_cli_state()
+    if state.active is None:
+        raise SingCliError("No active profile. Run 'sing start <name>' first.")
+    entry = require_profile(state, state.active)
+    bin_path = require_installed_bin(state)
+    stop_service()
+    configure_service(bin_path, entry.path)
+    start_service()
     typer.echo(f"Restarted {state.active}")
 
 
 @app.command()
+@report_cli_errors
 def add(name: str, url: str) -> None:
-    try:
-        validate_profile_name(name)
-        state = load_cli_state()
-        if name in state.profiles:
-            raise SingCliError(f"Profile already exists: {name}")
-        destination = profile_path(name)
-        download_profile(url, destination)
-        state.profiles[name] = ProfileEntry(url=url, path=str(destination), updated_at=now_utc())
-        save_cli_state(state)
-    except SingCliError as error:
-        fail(error)
+    validate_profile_name(name)
+    state = load_cli_state()
+    if name in state.profiles:
+        raise SingCliError(f"Profile already exists: {name}")
+    destination = profile_path(name)
+    download_profile(url, destination)
+    state.profiles[name] = ProfileEntry(url=url, path=str(destination), updated_at=now_utc())
+    save_cli_state(state)
     typer.echo(f"Added {name}")
 
 
 @app.command()
+@report_cli_errors
 def remove(name: str) -> None:
-    try:
-        state = load_cli_state()
-        entry = require_profile(state, name)
-        if state.active == name:
-            raise SingCliError(f"Cannot remove active profile: {name}")
-        Path(entry.path).unlink()
-        del state.profiles[name]
-        save_cli_state(state)
-    except SingCliError as error:
-        fail(error)
+    state = load_cli_state()
+    entry = require_profile(state, name)
+    if state.active == name:
+        raise SingCliError(f"Cannot remove active profile: {name}")
+    Path(entry.path).unlink()
+    del state.profiles[name]
+    save_cli_state(state)
     typer.echo(f"Removed {name}")
 
 
 @app.command()
+@report_cli_errors
 def update(name: str) -> None:
-    try:
-        state = load_cli_state()
-        entry = require_profile(state, name)
-        download_profile(entry.url, Path(entry.path))
-        state.profiles[name] = ProfileEntry(url=entry.url, path=entry.path, updated_at=now_utc())
-        save_cli_state(state)
-    except SingCliError as error:
-        fail(error)
+    state = load_cli_state()
+    entry = require_profile(state, name)
+    download_profile(entry.url, Path(entry.path))
+    state.profiles[name] = ProfileEntry(url=entry.url, path=entry.path, updated_at=now_utc())
+    save_cli_state(state)
     typer.echo(f"Updated {name}")
 
 
 @app.command(name="list")
+@report_cli_errors
 def list_profiles() -> None:
-    try:
-        state = load_cli_state()
+    state = load_cli_state()
 
-        if not state.profiles:
-            typer.echo("No profiles")
-            return
+    if not state.profiles:
+        typer.echo("No profiles")
+        return
 
-        for name, entry in sorted(state.profiles.items()):
-            marker = "*" if state.active == name else " "
-            typer.echo(f"{marker} {name}\t{entry.url}\t{format_local_updated_at(name, entry.updated_at)}")
-    except SingCliError as error:
-        fail(error)
+    for name, entry in sorted(state.profiles.items()):
+        marker = "*" if state.active == name else " "
+        typer.echo(f"{marker} {name}\t{entry.url}\t{format_local_updated_at(name, entry.updated_at)}")
