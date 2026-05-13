@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend command contracts and quality checklist"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Expected CLI failure handling and explicit error boundaries"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "CLI stdout and stderr output boundaries"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Python quality tools and test expectations"}

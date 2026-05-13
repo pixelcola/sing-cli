@@ -269,3 +269,36 @@ Changed sing list to render stored UTC profile update timestamps in the computer
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: Optimize Python code
+
+**Date**: 2026-05-13
+**Task**: Optimize Python code
+**Branch**: `refactor/optimize-python-code`
+
+### Summary
+
+Refactored CLI command error handling through a shared SingCliError reporting boundary, split profile download into fetch/validate/write steps, documented the CLI boundary convention, verified pytest, Ruff, and ty, committed the refactor, and opened PR #10.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8c0ae39` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
