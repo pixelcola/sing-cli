@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
-- **Last Active**: 2026-05-12
+- **Total Sessions**: 8
+- **Last Active**: 2026-05-13
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~238 | Active |
+| `journal-1.md` | ~271 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 8 | 2026-05-13 | Use local timezone in sing list | `c6a44bf` | `fix/list-local-timezone` |
 | 7 | 2026-05-12 | Expand test coverage | `764205a` | `test/improve-coverage` |
 | 6 | 2026-05-12 | Update README installation instructions | `49680f6` | `docs/readme-install-uv-tool` |
 | 5 | 2026-05-12 | Fix restart active profile | `010e59e` | `fix/restart-active-config` |

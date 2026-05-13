@@ -236,3 +236,36 @@ Added CLI, profile, state, and service tests covering command success paths, fai
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: Use local timezone in sing list
+
+**Date**: 2026-05-13
+**Task**: Use local timezone in sing list
+**Branch**: `fix/list-local-timezone`
+
+### Summary
+
+Changed sing list to render stored UTC profile update timestamps in the computer's local timezone, preserved UTC state storage, added CLI tests for local rendering and invalid timestamps, committed the fix, and opened PR #9.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c6a44bf` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
