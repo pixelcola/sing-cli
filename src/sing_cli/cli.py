@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -59,6 +60,22 @@ def require_installed_bin(state: State) -> str:
 def fail(error: SingCliError) -> None:
     typer.echo(f"Error: {error}", err=True)
     raise typer.Exit(1)
+
+
+def to_local_timezone(value: datetime) -> datetime:
+    return value.astimezone()
+
+
+def format_local_updated_at(profile_name: str, updated_at: str) -> str:
+    if not updated_at.endswith("Z"):
+        raise SingCliError(f"Profile '{profile_name}' has invalid updated_at timestamp: {updated_at}")
+
+    try:
+        updated_at_utc = datetime.fromisoformat(updated_at.removesuffix("Z") + "+00:00")
+    except ValueError as error:
+        raise SingCliError(f"Profile '{profile_name}' has invalid updated_at timestamp: {updated_at}") from error
+
+    return to_local_timezone(updated_at_utc).isoformat()
 
 
 @app.command()
@@ -173,13 +190,13 @@ def update(name: str) -> None:
 def list_profiles() -> None:
     try:
         state = load_cli_state()
+
+        if not state.profiles:
+            typer.echo("No profiles")
+            return
+
+        for name, entry in sorted(state.profiles.items()):
+            marker = "*" if state.active == name else " "
+            typer.echo(f"{marker} {name}\t{entry.url}\t{format_local_updated_at(name, entry.updated_at)}")
     except SingCliError as error:
         fail(error)
-
-    if not state.profiles:
-        typer.echo("No profiles")
-        return
-
-    for name, entry in sorted(state.profiles.items()):
-        marker = "*" if state.active == name else " "
-        typer.echo(f"{marker} {name}\t{entry.url}\t{entry.updated_at}")

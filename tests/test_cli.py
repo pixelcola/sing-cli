@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -541,14 +542,36 @@ def test_list_profiles_marks_active_profile(tmp_path: Path, monkeypatch: pytest.
         ),
     )
     monkeypatch.setattr(cli, "app_dir", lambda: tmp_path)
+    monkeypatch.setattr(cli, "to_local_timezone", lambda value: value.astimezone(timezone(timedelta(hours=8))))
 
     result = CliRunner().invoke(cli.app, ["list"])
 
     assert result.exit_code == 0
     assert result.stdout == (
-        "  home\thttps://example.com/home.json\t2026-05-12T00:00:00Z\n"
-        "* work\thttps://example.com/work.json\t2026-05-12T01:00:00Z\n"
+        "  home\thttps://example.com/home.json\t2026-05-12T08:00:00+08:00\n"
+        "* work\thttps://example.com/work.json\t2026-05-12T09:00:00+08:00\n"
     )
+
+
+def test_list_profiles_reports_invalid_updated_at(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    write_state(
+        tmp_path,
+        State(
+            profiles={
+                "home": ProfileEntry(
+                    url="https://example.com/home.json",
+                    path="C:/profiles/home",
+                    updated_at="2026-05-12T00:00:00",
+                )
+            },
+        ),
+    )
+    monkeypatch.setattr(cli, "app_dir", lambda: tmp_path)
+
+    result = CliRunner().invoke(cli.app, ["list"])
+
+    assert result.exit_code == 1
+    assert result.stderr == "Error: Profile 'home' has invalid updated_at timestamp: 2026-05-12T00:00:00\n"
 
 
 def test_list_profiles_reports_empty_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
